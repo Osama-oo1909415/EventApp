@@ -1,26 +1,30 @@
+// app/(tabs)/index.tsx
+
+import { Link } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  Pressable,
   SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   View,
-  useColorScheme // <<< FIX: Import useColorScheme
+  useColorScheme
 } from 'react-native';
 
-// Import our new theme hook
 import { useThemeColors } from '@/constants/Theme';
 
-// --- Interfaces (No changes needed) ---
 interface EventData {
   title: string;
   date: string;
   description: string | null;
   imageUrl: string | null;
   categories: string[];
+  latitude: string;
+  longitude: string;
 }
 
 interface EventItemProps {
@@ -28,7 +32,6 @@ interface EventItemProps {
   colors: ReturnType<typeof useThemeColors>;
 }
 
-// --- EventItem Component (Restyled as a Material 3 Card) ---
 const EventItem = ({ item, colors }: EventItemProps) => {
   const eventDate = new Date(item.date);
   const formattedDate = !isNaN(eventDate.getTime())
@@ -48,14 +51,19 @@ const EventItem = ({ item, colors }: EventItemProps) => {
   const dateStyle = { color: colors.onSurfaceVariant };
 
   return (
-    <View style={[styles.itemContainer, cardStyle]}>
-      <Text style={[styles.itemTitle, titleStyle]}>{item.title}</Text>
-      <Text style={[styles.itemDate, dateStyle]}>{formattedDate}</Text>
-    </View>
+    // --- FIX: Point the Link to the new '/details' route ---
+    <Link href={{ pathname: '/details', params: { event: JSON.stringify(item) } }} asChild>
+      <Pressable>
+        <View style={[styles.itemContainer, cardStyle]}>
+          <Text style={[styles.itemTitle, titleStyle]}>{item.title}</Text>
+          <Text style={[styles.itemDate, dateStyle]}>{item.date}</Text>
+        </View>
+      </Pressable>
+    </Link>
   );
 };
 
-// --- TopAppBar Component (New) ---
+// ... (The rest of the file is the same as before)
 const TopAppBar = ({ colors }: { colors: ReturnType<typeof useThemeColors> }) => (
   <View style={[styles.appBarContainer, { backgroundColor: colors.surface }]}>
     <Image
@@ -66,15 +74,13 @@ const TopAppBar = ({ colors }: { colors: ReturnType<typeof useThemeColors> }) =>
   </View>
 );
 
-// --- Main Screen Component (Updated with new styles and logos) ---
 export default function EventScreen() {
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [data, setData] = useState<EventData[]>([]);
   
-  // Use our new theme hook to get colors
   const colors = useThemeColors();
-  const colorScheme = useColorScheme(); // Hook for StatusBar
+  const colorScheme = useColorScheme();
 
   const API_URL = 'http://10.156.223.223:14481/umbraco/api/events/getall';
 
@@ -143,7 +149,6 @@ export default function EventScreen() {
   );
 }
 
-// --- Stylesheet (Updated for Material 3) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -177,7 +182,7 @@ const styles = StyleSheet.create({
   },
   appBarTitle: {
     fontSize: 22,
-    fontWeight: '400', // Material 3 uses 'regular' weight for titles
+    fontWeight: '400',
   },
   list: {
     paddingHorizontal: 16,
@@ -185,9 +190,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   itemContainer: {
-    padding: 16,
+    padding: 20,
     marginVertical: 8,
-    borderRadius: 12, // Softer, larger radius for cards
+    borderRadius: 12,
     borderWidth: 1,
     elevation: 1,
     shadowOpacity: 0.05,
@@ -195,12 +200,12 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 1, width: 0 },
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: '500', // Medium weight for card titles
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '500', 
+    marginBottom: 6,
   },
   itemDate: {
-    fontSize: 14,
+    fontSize: 15,
   },
   loadingText: {
     marginTop: 10,
