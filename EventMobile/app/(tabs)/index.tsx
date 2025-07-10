@@ -1,124 +1,152 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
-  FlatList,
-  ActivityIndicator,
-  SafeAreaView,
-  StatusBar
+  useColorScheme // <<< FIX: Import useColorScheme
 } from 'react-native';
 
-// --- FIX 1: Define the shape of our Event data ---
-// This interface tells TypeScript what an event object looks like.
-interface EventData {
-  id: number;
-  eventTitle: string;
-  eventDateTime: string; // The date comes as a string from the API
-  // Add other properties from your API if you need them
-}
+// Import our new theme hook
+import { useThemeColors } from '@/constants/Theme';
 
-// --- FIX 2: Define the props for our EventItem component ---
-interface EventItemProps {
+// --- Interfaces (No changes needed) ---
+interface EventData {
   title: string;
   date: string;
+  description: string | null;
+  imageUrl: string | null;
+  categories: string[];
 }
 
-// The EventItem component now uses the typed props.
-const EventItem = ({ title, date }: EventItemProps) => {
-  // Format the date to be more readable
-  const formattedDate = new Date(date).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+interface EventItemProps {
+  item: EventData;
+  colors: ReturnType<typeof useThemeColors>;
+}
+
+// --- EventItem Component (Restyled as a Material 3 Card) ---
+const EventItem = ({ item, colors }: EventItemProps) => {
+  const eventDate = new Date(item.date);
+  const formattedDate = !isNaN(eventDate.getTime())
+    ? eventDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'Date not available';
+
+  const cardStyle = {
+    backgroundColor: colors.surface,
+    borderColor: colors.outlineVariant,
+  };
+  const titleStyle = { color: colors.onSurface };
+  const dateStyle = { color: colors.onSurfaceVariant };
 
   return (
-    <View style={styles.itemContainer}>
-      <Text style={styles.itemTitle}>{title}</Text>
-      <Text style={styles.itemDate}>{formattedDate}</Text>
+    <View style={[styles.itemContainer, cardStyle]}>
+      <Text style={[styles.itemTitle, titleStyle]}>{item.title}</Text>
+      <Text style={[styles.itemDate, dateStyle]}>{formattedDate}</Text>
     </View>
   );
 };
 
-// This is the main screen of your app
-export default function EventScreen() {
-  // --- FIX 3: Add types to our state variables ---
-  const [isLoading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null); // Can be an Error object or null
-  const [data, setData] = useState<EventData[]>([]); // An array of EventData objects
+// --- TopAppBar Component (New) ---
+const TopAppBar = ({ colors }: { colors: ReturnType<typeof useThemeColors> }) => (
+  <View style={[styles.appBarContainer, { backgroundColor: colors.surface }]}>
+    <Image
+      source={require('@/assets/images/wordless_logo.png')}
+      style={styles.appBarLogo}
+    />
+    <Text style={[styles.appBarTitle, { color: colors.onSurface }]}>Events</Text>
+  </View>
+);
 
-  // --- IMPORTANT ---
-  // The port has been changed to 14481 to match the HTTP port from your server logs.
-  const API_URL = 'http://192.168.100.8:14481/umbraco/api/events/getall';
+// --- Main Screen Component (Updated with new styles and logos) ---
+export default function EventScreen() {
+  const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [data, setData] = useState<EventData[]>([]);
+  
+  // Use our new theme hook to get colors
+  const colors = useThemeColors();
+  const colorScheme = useColorScheme(); // Hook for StatusBar
+
+  const API_URL = 'http://10.156.223.223:14481/umbraco/api/events/getall';
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(API_URL);
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const json = await response.json();
         setData(json);
       } catch (e) {
-        // --- FIX 4: Handle the error type correctly ---
-        if (e instanceof Error) {
-          setError(e);
-        } else {
-          setError(new Error('An unknown error occurred'));
-        }
+        if (e instanceof Error) { setError(e); } 
+        else { setError(new Error('An unknown error occurred')); }
         console.error("Failed to fetch events:", e);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
+  const screenStyles = {
+    backgroundColor: colors.background,
+  };
+  const textStyles = {
+    color: colors.onBackground,
+  };
+  const errorTextStyles = {
+    color: colors.error,
+  };
+
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Loading Events...</Text>
+      <View style={[styles.center, screenStyles]}>
+        <Image source={require('@/assets/images/eventlogofull.png')} style={styles.fullLogo} />
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+        <Text style={[styles.loadingText, textStyles]}>Loading Events...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>Failed to load events.</Text>
-        <Text style={styles.errorDetails}>{error.message}</Text>
-        <Text style={styles.errorDetails}>Is your Umbraco site running?</Text>
-        <Text style={styles.errorDetails}>Did you set the correct IP address and port?</Text>
+      <View style={[styles.center, screenStyles]}>
+        <Image source={require('@/assets/images/eventlogofull.png')} style={styles.fullLogo} />
+        <Text style={[styles.errorText, errorTextStyles]}>Failed to Load Events</Text>
+        <Text style={[styles.errorDetails, textStyles]}>Could not connect to the API.</Text>
+        <Text style={[styles.errorDetails, textStyles]}>{error.message}</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Umbraco Events</Text>
+    <SafeAreaView style={[styles.container, screenStyles]}>
+      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+      <TopAppBar colors={colors} />
       <FlatList
         data={data}
-        keyExtractor={(item) => item.id.toString()} // TypeScript now knows 'item' has an 'id'
-        renderItem={({ item }) => (
-          <EventItem title={item.eventTitle} date={item.eventDateTime} /> // And an 'eventTitle' and 'eventDateTime'
-        )}
+        keyExtractor={(item, index) => item.title + index}
+        renderItem={({ item }) => <EventItem item={item} colors={colors} />}
         contentContainerStyle={styles.list}
       />
     </SafeAreaView>
   );
 }
 
-// --- Stylesheet (no changes needed here) ---
+// --- Stylesheet (Updated for Material 3) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: StatusBar.currentHeight || 0,
-    backgroundColor: '#f0f0f0',
   },
   center: {
     flex: 1,
@@ -126,44 +154,67 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 20,
+  fullLogo: {
+    width: 250,
+    height: 100,
+    resizeMode: 'contain',
+    marginBottom: 20,
+  },
+  appBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    paddingHorizontal: 16,
+    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    shadowOffset: { height: 1, width: 0 },
+  },
+  appBarLogo: {
+    width: 32,
+    height: 32,
+    marginRight: 16,
+  },
+  appBarTitle: {
+    fontSize: 22,
+    fontWeight: '400', // Material 3 uses 'regular' weight for titles
   },
   list: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   itemContainer: {
-    backgroundColor: '#ffffff',
-    padding: 20,
+    padding: 16,
     marginVertical: 8,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 12, // Softer, larger radius for cards
+    borderWidth: 1,
+    elevation: 1,
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    shadowOffset: { height: 1, width: 0 },
   },
   itemTitle: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '500', // Medium weight for card titles
+    marginBottom: 4,
   },
   itemDate: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
   errorText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'red',
+    fontSize: 22,
+    fontWeight: '500',
     textAlign: 'center',
+    marginBottom: 8,
   },
   errorDetails: {
-    marginTop: 10,
+    marginTop: 8,
     textAlign: 'center',
-    color: '#333',
-  }
+    fontSize: 14,
+  },
 });
