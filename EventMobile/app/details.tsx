@@ -1,7 +1,7 @@
-// app/event/[...event].tsx
+// app/details.tsx
 
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
-import React from 'react'; // <-- FIX: Added missing React import
+import React from 'react';
 import {
   Image,
   ScrollView,
@@ -26,8 +26,6 @@ export default function EventDetailsScreen() {
   const params = useLocalSearchParams();
   const colors = useThemeColors();
 
-  // --- FIX: Add a safety check before parsing the event data ---
-  // This prevents the screen from crashing if the data is missing.
   if (!params.event || typeof params.event !== 'string') {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
@@ -37,7 +35,6 @@ export default function EventDetailsScreen() {
     );
   }
   
-  // If the check passes, we can safely parse and use the event data.
   const event: EventData = JSON.parse(params.event);
   
   const screenStyles = { backgroundColor: colors.background };
@@ -108,7 +105,7 @@ const styles = StyleSheet.create({
     link: {
       marginTop: 15,
       paddingVertical: 15,
-      color: '#D0BCFF', // A default link color
+      color: '#D0BCFF',
     },
     headerImage: {
         width: '100%',
