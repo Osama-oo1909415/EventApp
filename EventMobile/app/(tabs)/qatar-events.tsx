@@ -1,5 +1,3 @@
-// app/(tabs)/qatar-events.tsx
-
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
 import React, { useEffect, useState } from 'react';
@@ -14,13 +12,11 @@ import {
   View,
   useColorScheme
 } from 'react-native';
-import { Calendar } from 'react-native-calendars';
-import { format } from 'date-fns';
 
 import { useThemeColors } from '@/constants/Theme';
 
-// Interface for the scraped data from Visit Qatar
 interface ScrapedEventData {
+  id?: string;
   title: string;
   date: string;
   description: string | null;
@@ -73,9 +69,7 @@ export default function QatarEventsScreen() {
   const colors = useThemeColors();
   const colorScheme = useColorScheme();
 
-  // Make sure your server is running and this IP is correct!
   const API_URL = 'http://172.26.14.153:5001/api/events';
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,62 +92,6 @@ export default function QatarEventsScreen() {
   const screenStyles = { backgroundColor: colors.background };
   const textStyles = { color: colors.onBackground };
   const errorTextStyles = { color: colors.error };
-
-  // Add calendar rendering function
-  const renderCalendarView = () => {
-    // Create marked dates for the calendar
-    const markedDates = data.reduce((acc, event) => {
-      // Extract date from event.date string
-      let dateString;
-      try {
-        const dateMatch = event.date.match(/\d{4}-\d{2}-\d{2}/);
-        if (dateMatch) {
-          dateString = dateMatch[0];
-        } else {
-          const date = new Date(event.date);
-          if (!isNaN(date.getTime())) {
-            dateString = format(date, 'yyyy-MM-dd');
-          }
-        }
-      } catch (e) {
-        console.log('Could not parse date:', event.date);
-        return acc;
-      }
-
-      if (dateString) {
-        return {
-          ...acc,
-          [dateString]: { 
-            marked: true, 
-            dotColor: colors.primary,
-            selected: true,
-            selectedColor: colors.primaryContainer
-          }
-        };
-      }
-      return acc;
-    }, {});
-
-    return (
-      <View style={styles.calendarContainer}>
-        <Calendar
-          markedDates={markedDates}
-          theme={{
-            backgroundColor: colors.background,
-            calendarBackground: colors.surface,
-            textSectionTitleColor: colors.onSurface,
-            selectedDayBackgroundColor: colors.primary,
-            selectedDayTextColor: colors.onPrimary,
-            todayTextColor: colors.primary,
-            dayTextColor: colors.onSurface,
-            textDisabledColor: colors.outline,
-            arrowColor: colors.primary,
-            monthTextColor: colors.onSurface,
-          }}
-        />
-      </View>
-    );
-  };
 
   if (isLoading) {
     return (
@@ -178,13 +116,9 @@ export default function QatarEventsScreen() {
     <SafeAreaView style={[styles.container, screenStyles]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
       <TopAppBar colors={colors} />
-      
-      {/* Keep the calendar view */}
-      {data.length > 0 && renderCalendarView()}
-      
       <FlatList
         data={data}
-        keyExtractor={(item) => item.title + item.date}
+        keyExtractor={(item, index) => item.id ? item.id : `${item.title}-${item.date}-${index}`}
         renderItem={({ item }) => <EventItem item={item} colors={colors} />}
         contentContainerStyle={styles.list}
       />
@@ -192,7 +126,6 @@ export default function QatarEventsScreen() {
   );
 }
 
-// Keep all existing styles including the calendarContainer style
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
@@ -207,12 +140,4 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 10, fontSize: 16 },
   errorText: { fontSize: 22, fontWeight: '500', textAlign: 'center', marginBottom: 8 },
   errorDetails: { marginTop: 8, textAlign: 'center', fontSize: 14 },
-  calendarContainer: { 
-    marginHorizontal: 16, 
-    marginVertical: 10,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)'
-  },
 });

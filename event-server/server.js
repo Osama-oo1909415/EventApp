@@ -11,21 +11,18 @@ const DATA_FILE_PATH = path.join(process.cwd(), 'events.json');
 app.use(cors());
 app.use(express.json());
 
-// API endpoint to get the events from the JSON file
 app.get('/api/events', async (req, res) => {
-  console.log(`Request received. Reading from ${DATA_FILE_PATH}`);
+  console.log(`Request received. Attempting to read from ${DATA_FILE_PATH}`);
   try {
-    // Read the events.json file
     const fileContents = await fs.readFile(DATA_FILE_PATH, 'utf-8');
     const events = JSON.parse(fileContents);
     res.json(events);
   } catch (error) {
     console.error('❌ Could not read events.json:', error.message);
-    res.status(500).send('Error: Could not read the events data file. Please run the scrape script first.');
+    res.status(500).send('Error: Could not read the events data file. Please run `node scrape.js` first.');
   }
 });
 
 app.listen(port, () => {
   console.log(`✅ Server is running on http://localhost:${port}`);
-  console.log('This server will only serve data from events.json.');
 });
