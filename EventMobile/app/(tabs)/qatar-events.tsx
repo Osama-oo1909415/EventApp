@@ -179,7 +179,7 @@ export default function QatarEventsScreen() {
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
       <TopAppBar colors={colors} />
       
-      {/* Add calendar view here */}
+      {/* Keep the calendar view */}
       {data.length > 0 && renderCalendarView()}
       
       <FlatList
@@ -192,7 +192,7 @@ export default function QatarEventsScreen() {
   );
 }
 
-// You can reuse the styles from your index.tsx or create new ones
+// Keep all existing styles including the calendarContainer style
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },

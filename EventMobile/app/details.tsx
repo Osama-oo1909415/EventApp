@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import MapView, { Marker } from 'react-native-maps';
 
 import { useThemeColors } from '@/constants/Theme';
 
@@ -87,6 +88,11 @@ const UmbracoEventDetails = ({ event, colors }: { event: UmbracoEventData, color
       })
     : 'Date not available';
 
+  // Check if we have valid coordinates
+  const hasLocation = event.latitude && event.longitude && 
+                      !isNaN(parseFloat(event.latitude)) && 
+                      !isNaN(parseFloat(event.longitude));
+
   return (
     <>
       {event.imageUrl && (
@@ -117,6 +123,31 @@ const UmbracoEventDetails = ({ event, colors }: { event: UmbracoEventData, color
                     ))}
                 </View>
             </View>
+        )}
+        
+        {hasLocation && (
+          <View style={[styles.detailCard, cardStyles]}>
+            <Text style={[styles.cardTitle, textStyles]}>Location</Text>
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: parseFloat(event.latitude),
+                  longitude: parseFloat(event.longitude),
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: parseFloat(event.latitude),
+                    longitude: parseFloat(event.longitude),
+                  }}
+                  title={event.title}
+                />
+              </MapView>
+            </View>
+          </View>
         )}
       </View>
     </>
@@ -165,4 +196,14 @@ const styles = StyleSheet.create({
   categoryText: { fontSize: 14, fontWeight: '500' },
   linkButton: { marginTop: 10, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 20, alignItems: 'center' },
   linkButtonText: { fontSize: 16, fontWeight: 'bold' },
+  mapContainer: { 
+    height: 200, 
+    marginTop: 8, 
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
 });
