@@ -1,27 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
 
-// Define the structure of an event
+// Update the interface to match your actual data structure
 interface Event {
-  id: number;
   title: string;
-  dateTime: string;
-  location: string | null;
+  date: string;
   description: string | null;
   imageUrl: string | null;
-  categories: string[];
+  link: string | null;
 }
 
 const EventsScreen = () => {
-  const [events, setEvents] = useState<Event[]>([]); // Type events as Event[]
-  const [error, setError] = useState<string | null>(null); // Store error messages
-  const [loading, setLoading] = useState(true); // Track loading state
+  const [events, setEvents] = useState<Event[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // Replace with your correct API URL
-        const apiUrl = 'https://78.101.190.174:44337/umbraco/api/eventsapi/v1/getall';
+        const apiUrl = 'http://192.168.50.137:5001/api/events';
         console.log('Fetching events from:', apiUrl);
 
         const response = await fetch(apiUrl);
@@ -35,51 +32,134 @@ const EventsScreen = () => {
         console.log('Fetched data:', data);
         setEvents(data);
       } catch (err) {
-        // Safely handle the error
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         setError(errorMessage);
         console.error('Error fetching events:', err);
       } finally {
-        setLoading(false); // Stop loading regardless of success or failure
+        setLoading(false);
       }
     };
 
     fetchEvents();
   }, []);
 
-  // Show loading state
+  const openEventLink = async (url: string) => {
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        console.warn('Cannot open URL:', url);
+      }
+    } catch (error) {
+      console.error('Error opening URL:', error);
+    }
+  };
+
   if (loading) {
     return (
-      <View style={{ padding: 20 }}>
-        <Text>Loading...</Text>
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading events...</Text>
       </View>
     );
   }
 
-  // Show error if fetch fails
   if (error) {
     return (
-      <View style={{ padding: 20 }}>
-        <Text style={{ color: 'red' }}>Error: {error}</Text>
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Error: {error}</Text>
       </View>
     );
   }
 
-  // Render the events list
   return (
-    <View style={{ padding: 20 }}>
+    <View style={styles.container}>
+      <Text style={styles.headerText}>Events in Qatar</Text>
       <FlatList
         data={events}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => `${item.title}-${index}`} // Use title and index as a fallback key
         renderItem={({ item }) => (
-          <View style={{ marginBottom: 10 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{item.title}</Text>
-            <Text>{item.dateTime}</Text>
-          </View>
+          <TouchableOpacity 
+            style={styles.eventCard}
+            onPress={() => item.link ? openEventLink(item.link) : null}
+          >
+            {item.imageUrl && (
+              <Image 
+                source={{ uri: item.imageUrl }} 
+                style={styles.eventImage} 
+                resizeMode="cover"
+              />
+            )}
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventTitle}>{item.title}</Text>
+              <Text style={styles.eventDate}>{item.date}</Text>
+              {item.description && (
+                <Text style={styles.eventDescription} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
         )}
       />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#333',
+  },
+  eventCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  eventImage: {
+    width: '100%',
+    height: 180,
+  },
+  eventInfo: {
+    padding: 16,
+  },
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  eventDate: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  eventDescription: {
+    fontSize: 14,
+    color: '#777',
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: 'red',
+  },
+});
 
 export default EventsScreen;
