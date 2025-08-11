@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
+    "import-events": "node db-import.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,6 +19,7 @@
     "express": "^5.1.0",
     "fs": "^0.0.1-security",
     "he": "^1.2.0",
+    "mssql": "^11.0.1",
     "puppeteer": "^24.14.0"
   }
 }

@@ -82,7 +82,7 @@ export default function EventScreen() {
   const colors = useThemeColors();
   const colorScheme = useColorScheme();
 
-  const API_URL = 'http://172.26.14.153:14481/umbraco/api/events/getall';
+  const API_URL = 'http://192.168.50.137:14481/umbraco/api/events/getall';
 
   useEffect(() => {
     const fetchData = async () => {
