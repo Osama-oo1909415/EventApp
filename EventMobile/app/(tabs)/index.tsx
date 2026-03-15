@@ -82,7 +82,7 @@ export default function EventScreen() {
   const colors = useThemeColors();
   const colorScheme = useColorScheme();
 
-  const API_URL = 'http://192.168.50.137:14481/umbraco/api/events/getall';
+  const API_URL = 'http://192.168.50.137:14481/umbraco/api/eventsapi/v1/getall';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,7 +92,17 @@ export default function EventScreen() {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const json = await response.json();
-        setData(json);
+        // Map API fields to your EventData interface
+        const mapped = json.map((item: any) => ({
+          title: item.title,
+          date: item.dateTime,
+          description: item.description,
+          imageUrl: item.imageUrl,
+          categories: item.categories ?? [],
+          latitude: '', // Not provided by API
+          longitude: '', // Not provided by API
+        }));
+        setData(mapped);
       } catch (e) {
         if (e instanceof Error) { setError(e); } 
         else { setError(new Error('An unknown error occurred')); }
